@@ -64,7 +64,7 @@ namespace GatewayApi.Controllers
         }
         [HttpPost]
         [Route("add-devices")]
-        public async Task<ActionResult<List<String>>> AddDevices(DevicesToGatewayDTO body)
+        public async Task<IActionResult> AddDevices(DevicesToGatewayDTO body)
         {
             try {
                 var gatewayItem = await _context.Gateways.FindAsync(body.GatewaySerial);
@@ -94,7 +94,7 @@ namespace GatewayApi.Controllers
         }
         [HttpPost]
         [Route("remove-devices")]
-        public async Task<ActionResult<List<String>>> RemoveDevices(DevicesToGatewayDTO body)
+        public async Task<IActionResult> RemoveDevices(DevicesToGatewayDTO body)
         {
             try {
                 var gatewayItem = await _context.Gateways.FindAsync(body.GatewaySerial);
@@ -112,6 +112,37 @@ namespace GatewayApi.Controllers
                 }
                 await _context.SaveChangesAsync();
                 return Ok("Devices removed succesfully.");
+            } catch (Exception ex) {
+                _logger.LogError(ex.Message);
+                return Problem(statusCode: 400, title: ex.Message);
+            }
+        }
+        [HttpPost]
+        [Route("assign-devices")]
+        public async Task<IActionResult> AsignDevices(DevicesToGatewayDTO body)
+        {
+            try {
+                var gatewayItem = await _context.Gateways.FindAsync(body.GatewaySerial);
+                if (gatewayItem == null)
+                {
+                    return Problem(statusCode: 400, title: "Gateway Not Found");
+                }
+                if (body.DevicesIds.Count > 10) {
+                    return Problem(statusCode: 400, title: "A gateway can't have more than 10 devices");
+                }
+                var devices = await _context.Devices.ToListAsync();
+                foreach(var device in devices) {
+                    if (body.DevicesIds.Contains(device.UID)) 
+                    {
+                        device.SerialNumber = body.GatewaySerial;
+                    }
+                    else if (device.SerialNumber == body.GatewaySerial)
+                    {
+                        device.SerialNumber = null;
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Ok("Devices assigned succesfully.");
             } catch (Exception ex) {
                 _logger.LogError(ex.Message);
                 return Problem(statusCode: 400, title: ex.Message);

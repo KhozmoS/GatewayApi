@@ -114,6 +114,38 @@ namespace GatewayApi.Tests
             var errorResponse = JsonConvert.DeserializeObject<Problem>(res.Result);
             Assert.IsTrue(errorResponse.title == "A gateway can't have more than 10 devices", "Incorrect error type.");
         }
+        [TestMethod]
+        public void Add10DevicesToGateway()
+        {
+            Gateway gateway = JsonConvert.DeserializeObject<Gateway>(
+                                CreateRandomGateway().Result.Content.ReadAsStringAsync().Result
+                              );
+            List <String> devices = new List<String>();
+            for (int i = 0; i < 10; i++)
+            {
+                Device device = JsonConvert
+                                    .DeserializeObject<Device>(
+                                        CreateRandomDevice().Result.Content.ReadAsStringAsync().Result
+                                    );
+                devices.Add(device.UID.ToString());
+            }
+            var data = new DevicesToGatewayDTO{
+                GatewaySerial = gateway.SerialNumber,
+                DevicesIds = devices
+            };
+            var json = JsonConvert.SerializeObject(data);
+            var stringContent = new StringContent(json, UnicodeEncoding.UTF8, "application/json");
+            var resp = client.PostAsync($"{baseUrl}/gateway/assign-devices", stringContent);
+            // STATUS CODE CAN'T BE OK
+            if (resp.Result.StatusCode == System.Net.HttpStatusCode.OK) 
+            {
+                Assert.IsTrue(true);
+            }
+            else 
+            {
+                Assert.IsTrue(false, "Request must be completed without errors");
+            }
+        }
         private String GenerateRandomString(int sz) 
         {
             var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

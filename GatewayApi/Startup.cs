@@ -16,7 +16,7 @@ using GatewayApi.Models;
 namespace GatewayApi
 {
     public class Startup
-    {
+    {        
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -28,6 +28,13 @@ namespace GatewayApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+            });
             services.AddDbContext<GatewayContext>(opt =>
                                                opt.UseInMemoryDatabase("GatewayDB"));
         }
@@ -39,6 +46,8 @@ namespace GatewayApi
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseCors("CorsPolicy");
 
             app.UseHttpsRedirection();
 
